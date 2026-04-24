@@ -123,3 +123,12 @@ async def query(request: Request, question: Optional[str] = Form(default=None), 
     result = answer_query(question=q)
     return JSONResponse(result)
 
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
