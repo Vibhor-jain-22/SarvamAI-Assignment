@@ -1,4 +1,4 @@
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://sarvamai-assignment-atct.onrender.com";
 
 const chatEl = document.getElementById("chat");
 const statusEl = document.getElementById("status");
