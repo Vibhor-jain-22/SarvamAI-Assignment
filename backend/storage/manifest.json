@@ -1,0 +1,12 @@
+{
+  "last_uploaded_filename": "himalayan-d3g-owners-manual_removed.pdf",
+  "ingested_at": "2026-04-24T11:40:36.568525+00:00",
+  "chunking": {
+    "chunk_size": 2000,
+    "chunk_overlap": 200
+  },
+  "counts": {
+    "pages": 9,
+    "chunks": 8
+  }
+}
