@@ -174,24 +174,6 @@ POST /query
 
 ---
 
-## ⚠️ Limitations
-
-* No multimodal support (text-only queries)
-* Single-LLM dependency (Mistral)
-* Retrieval quality depends on chunking and embeddings
-
----
-
-## 🚀 Future Improvements
-
-* Add support for multiple LLM providers
-* Improve retrieval with hybrid search (keyword + semantic)
-* Add re-ranking for better answer quality
-* Build hosted UI instead of static frontend
-* Add evaluation metrics
-
----
-
 ## 💼 Business Impact
 
 * Reduces time spent reading manuals
@@ -199,7 +181,3 @@ POST /query
 * Improves accessibility of technical information
 
 ---
-
-## 👤 Author
-
-**Vibhor Jain**
