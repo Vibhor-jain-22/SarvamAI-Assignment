@@ -1,106 +1,205 @@
-# Bike Troubleshooting Assistant (RAG)
+# 🚀 Bike Troubleshooting Assistant (RAG-Based)
 
-A FastAPI + vanilla JS web app that answers questions **strictly** from an uploaded manual PDF using Retrieval Augmented Generation (RAG). If the manual doesn’t contain the answer, it refuses with:
+## 🧠 Overview
 
-`Sorry, this information is not available in the manual.`
+This project implements a **Retrieval-Augmented Generation (RAG) based AI assistant** that answers user queries **strictly from a provided bike manual (PDF)**.
 
-## Setup
+The system is designed with a **zero-hallucination principle**:
 
-### 1) Create venv + install dependencies
+> If the answer is not present in the manual, the assistant refuses to respond.
 
-From the repo root:
+---
 
-```bash
+## 🎯 Key Capabilities
+
+* 📄 PDF ingestion and processing
+* 🔍 Semantic search using embeddings (ChromaDB)
+* 🤖 LLM-powered answer generation (Mistral)
+* 🛑 Strict grounding (no hallucinations)
+* 📌 Source attribution with page numbers
+
+---
+
+### 🔄 End-to-End Flow
+
+1. **PDF Upload**
+
+   * User uploads a bike manual
+   * Text is extracted and chunked
+
+2. **Embedding Pipeline**
+
+   * Text chunks are converted into embeddings
+   * Stored in **ChromaDB (persistent storage)**
+
+3. **Query Processing**
+
+   * User submits a question via UI
+
+4. **Retrieval**
+
+   * Relevant chunks retrieved using similarity search
+
+5. **LLM Response Generation**
+
+   * Mistral LLM generates answer strictly from retrieved context
+   * If context is insufficient → refusal response
+
+---
+
+## 🧰 Tech Stack
+
+### 🔹 Backend
+
+* Python + FastAPI
+* Uvicorn
+
+### 🔹 LLM
+
+* Mistral API (`mistral-small-latest`)
+
+### 🔹 Embeddings & Retrieval
+
+* Mistral Embeddings (`mistral-embed`)
+* ChromaDB (persistent vector store)
+
+### 🔹 Frontend
+
+* Vanilla JavaScript + HTML
+
+---
+
+## 📁 Project Structure
+
+SarvamAI-Assignment/
+│
+├── backend/
+│   ├── main.py              # FastAPI app
+│   ├── storage/             # Chroma DB + logs
+│   └── requirements.txt
+│
+├── frontend/
+│   └── index.html           # UI
+│
+├── embedding.py             # Embedding logic
+└── README.md
+```
+
+---
+
+⚙️ Setup Instructions
+
+1️⃣ Create virtual environment
+
 python3 -m venv .venv
 source .venv/bin/activate
+```
+
+---
+
+2️⃣ Install dependencies
+
 pip install -r backend/requirements.txt
 ```
 
-### 2) Set environment variables
+---
 
-```bash
+### 3️⃣ Set environment variables
+
 export MISTRAL_API_KEY="YOUR_KEY"
-
-# Optional:
 export MISTRAL_CHAT_MODEL="mistral-small-latest"
 export MISTRAL_EMBED_MODEL="mistral-embed"
-
-# If you prefer OpenAI instead:
-# export OPENAI_API_KEY="YOUR_KEY"
-# export OPENAI_CHAT_MODEL="gpt-4.1-mini"
-# export OPENAI_EMBED_MODEL="text-embedding-3-small"
-# export OPENAI_VISION_MODEL="gpt-4o-mini"
-
-# If you prefer Gemini instead:
-# export GEMINI_API_KEY="YOUR_KEY"
-# export GEMINI_CHAT_MODEL="gemini-2.0-flash"
-# export GEMINI_EMBED_MODEL="gemini-embedding-001"
-# export GEMINI_VISION_MODEL="gemini-2.0-flash"
-
-export LOG_LEVEL="INFO"
 ```
 
-### 3) Run the backend
+---
 
-```bash
+4️⃣ Run backend
+
 uvicorn backend.main:app --reload --port 8000
 ```
 
-### 4) Open the frontend
+---
 
-- Open `frontend/index.html` in your browser.
-- Ensure the backend is running at `http://127.0.0.1:8000`.
+### 5️⃣ Open frontend
 
-## Usage
+Open:
 
-1) Click **Upload manual PDF** and upload a bike manual.
-2) Ask questions in chat; the response includes **sources with page numbers**.
-3) Bonus: click **Ask with image** to upload an image; it will be turned into a text query before RAG.
-   - If you’re using **Mistral** as the provider, image queries currently return a 400 because vision isn’t implemented in this app for Mistral.
-
-## API
-
-- `POST /upload` (multipart): field `pdf` (PDF file)
-- `POST /query`:
-  - JSON: `{ "question": "..." }`
-  - or multipart: field `question` (string) and/or `image` (image file)
-
-### curl examples
-
-Upload a PDF:
-
-```bash
-curl -sS -X POST "http://127.0.0.1:8000/upload" \
-  -F "pdf=@RAG/bullet-350.pdf"
+frontend/index.html
 ```
 
-Ask a question (JSON):
+---
 
-```bash
-curl -sS -X POST "http://127.0.0.1:8000/query" \
-  -H "Content-Type: application/json" \
-  -d '{"question":"How do I adjust the clutch lever free play?"}'
+## 🧪 API Endpoints
+
+### 📄 Upload Manual
+
+POST /upload
 ```
 
-Ask with an image (multipart):
+### ❓ Query
 
-```bash
-curl -sS -X POST "http://127.0.0.1:8000/query" \
-  -F "image=@/path/to/bike_issue.jpg"
+POST /query
 ```
 
-## Where data is stored
+---
 
-- Chroma persistence: `backend/storage/chroma/`
-- Manifest: `backend/storage/manifest.json`
-- Evaluation logs (JSONL): `backend/storage/eval_logs.jsonl`
+## 🧪 Sample Queries
 
-## Sample test queries
+* “What is the recommended engine oil grade?”
+* “How do I adjust the clutch lever free play?”
+* “What does the ABS warning light indicate?”
 
-After uploading a manual, try:
+### ❌ Out-of-scope example
 
-- “What is the recommended engine oil grade?”
-- “How do I adjust the clutch lever free play?”
-- “What does the ABS warning light indicate?”
-- Out-of-manual check: “What is the capital of France?” (must refuse)
+> “What is the capital of France?”
+> → Returns:
+> `Sorry, this information is not available in the manual.`
 
+---
+
+## 🧠 Design Decisions
+
+### 🔒 Grounded Answering
+
+* Responses are strictly based on retrieved context
+* Prevents hallucinations
+
+### 📦 Persistent Vector Store
+
+* ChromaDB stores embeddings for fast retrieval
+
+### ⚙️ Simple, Modular Backend
+
+* Clear separation between ingestion, retrieval, and generation
+
+---
+
+## ⚠️ Limitations
+
+* No multimodal support (text-only queries)
+* Single-LLM dependency (Mistral)
+* Retrieval quality depends on chunking and embeddings
+
+---
+
+## 🚀 Future Improvements
+
+* Add support for multiple LLM providers
+* Improve retrieval with hybrid search (keyword + semantic)
+* Add re-ranking for better answer quality
+* Build hosted UI instead of static frontend
+* Add evaluation metrics
+
+---
+
+## 💼 Business Impact
+
+* Reduces time spent reading manuals
+* Enables instant troubleshooting
+* Improves accessibility of technical information
+
+---
+
+## 👤 Author
+
+**Vibhor Jain**
