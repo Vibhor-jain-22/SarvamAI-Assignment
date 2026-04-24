@@ -8,7 +8,7 @@ from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from .embedding import get_llm_provider
 from .rag_pipeline import FALLBACK_ANSWER, answer_query, ingest_pdf
@@ -41,16 +41,13 @@ if os.path.isdir(FRONTEND_DIR):
 def serve_index():
     index_path = os.path.join(FRONTEND_DIR, "index.html")
     if not os.path.exists(index_path):
-        return JSONResponse({"message": "Frontend not found. Open frontend/index.html directly."})
+        return JSONResponse({"message": "Frontend not found. Ensure the frontend/ folder exists next to backend/."})
     return FileResponse(index_path)
 
 
 @app.get("/ui")
 def serve_ui():
-    index_path = os.path.join(FRONTEND_DIR, "index.html")
-    if not os.path.exists(index_path):
-        return JSONResponse({"message": "Frontend not found. Open frontend/index.html directly."})
-    return FileResponse(index_path)
+    return RedirectResponse(url="/", status_code=307)
 
 
 @app.post("/upload")
@@ -123,12 +120,3 @@ async def query(request: Request, question: Optional[str] = Form(default=None), 
     result = answer_query(question=q)
     return JSONResponse(result)
 
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)

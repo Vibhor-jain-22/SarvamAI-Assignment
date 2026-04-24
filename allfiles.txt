@@ -42,3 +42,32 @@ cb94a9e6cfacb9374827c9e7d6368f0f73e858fa embedding.py
 aa3f7b692dec66094bde6e5ab5fa190c5e43bb9e frontend/index.html
 80ba8080a5b49f252c3a4fa812daddfe18eae5f3 frontend/script.js
 f8a16bce1b534d6a233aceac7198adb3432eece6 frontend/styles.css
+
+
+#!/bin/bash
+
+echo "🚀 Starting Bike Troubleshooting Assistant..."
+
+# Step 1: Create venv if not exists
+if [ ! -d ".venv" ]; then
+  echo "📦 Creating virtual environment..."
+  python3 -m venv .venv
+fi
+
+# Step 2: Activate venv
+source .venv/bin/activate
+
+# Step 3: Install dependencies
+echo "📦 Installing dependencies..."
+pip install -r backend/requirements.txt
+
+# Step 4: Check API key
+if [ -z "$MISTRAL_API_KEY" ]; then
+  echo "❌ MISTRAL_API_KEY not set"
+  echo "Run: export MISTRAL_API_KEY=your_key"
+  exit 1
+fi
+
+# Step 5: Start backend
+echo "⚡ Starting backend on http://127.0.0.1:8000"
+uvicorn backend.main:app --reload --port 8000
