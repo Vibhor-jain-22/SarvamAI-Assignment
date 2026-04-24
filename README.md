@@ -122,10 +122,7 @@ uvicorn backend.main:app --reload --port 8000
 
 ### 5️⃣ Open frontend
 
-Open:
-
-frontend/index.html
-```
+Open: http://127.0.0.1:8000/ui
 
 ---
 
