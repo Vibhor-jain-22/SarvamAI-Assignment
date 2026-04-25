@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import mimetypes
 import os
 import tempfile
 from typing import Optional
@@ -30,6 +29,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def no_cache_for_ui_and_static(request: Request, call_next):
+    response = await call_next(request)
+    path = request.url.path or ""
+    if path == "/" or path.startswith("/static"):
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
 
 
 FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
@@ -82,40 +91,22 @@ async def upload(pdf: UploadFile = File(...)):
 
 
 @app.post("/query")
-async def query(request: Request, question: Optional[str] = Form(default=None), image: Optional[UploadFile] = File(default=None)):
+async def query(request: Request, question: Optional[str] = Form(default=None)):
     try:
-        provider = get_llm_provider()
+        get_llm_provider()
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-    # Support both JSON { "question": "..."} and multipart/form-data (question + optional image).
+    # Support both JSON { "question": "..."} and multipart/form-data (question).
     q = (question or "").strip()
     content_type = (request.headers.get("content-type") or "").lower()
-    if not q and image is None and "application/json" in content_type:
+    if not q and "application/json" in content_type:
         try:
             body = await request.json()
             if isinstance(body, dict):
                 q = str(body.get("question") or "").strip()
         except Exception:
             q = ""
-
-    if image is not None:
-        mime = image.content_type or mimetypes.guess_type(image.filename or "")[0] or "image/png"
-        if not mime.startswith("image/"):
-            raise HTTPException(status_code=400, detail="Invalid image upload.")
-        img_bytes = await image.read()
-        if not img_bytes:
-            raise HTTPException(status_code=400, detail="Empty image upload.")
-        try:
-            q = provider.vision_to_text(image_bytes=img_bytes, mime_type=mime)
-            q = (q or "").strip()
-            if not q:
-                raise RuntimeError("Image produced an empty query.")
-        except NotImplementedError as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        except Exception as e:
-            logger.exception("Vision-to-text failed")
-            raise HTTPException(status_code=400, detail=f"Failed to read image: {e}")
 
     result = answer_query(question=q)
     return JSONResponse(result)
