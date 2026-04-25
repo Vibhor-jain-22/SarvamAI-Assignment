@@ -1,4 +1,5 @@
 // Use same-origin requests so the UI works consistently wherever it's hosted.
+<h1>THIS IS NEW UI</h1>
 const API_BASE = "https://sarvamai-assignment-atct.onrender.com";
 
 const chatEl = document.getElementById("chat");
