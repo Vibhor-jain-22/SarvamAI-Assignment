@@ -1,10 +1,9 @@
 // Use same-origin requests so the UI works consistently wherever it's hosted.
-const API_BASE = "https://sarvamai-assignment-atct.onrender.com";
+const API_BASE = "";
 
 const chatEl = document.getElementById("chat");
 const statusEl = document.getElementById("status");
 const pdfInput = document.getElementById("pdfInput");
-const imageInput = document.getElementById("imageInput");
 const questionInput = document.getElementById("question");
 const sendBtn = document.getElementById("sendBtn");
 
@@ -115,15 +114,6 @@ async function queryText(question) {
   return data;
 }
 
-async function queryImage(file) {
-  const fd = new FormData();
-  fd.append("image", file);
-  const res = await fetch(`${API_BASE}/query`, { method: "POST", body: fd });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.detail || "Image query failed");
-  return data;
-}
-
 pdfInput.addEventListener("change", async (e) => {
   const f = e.target.files && e.target.files[0];
   if (!f) return;
@@ -135,26 +125,6 @@ pdfInput.addEventListener("change", async (e) => {
     addMessage("bot", `Upload error: ${err.message}`, []);
   } finally {
     pdfInput.value = "";
-  }
-});
-
-imageInput.addEventListener("change", async (e) => {
-  const f = e.target.files && e.target.files[0];
-  if (!f) return;
-  if (!manualReady) {
-    addMessage("bot", "Please upload a manual PDF first.", []);
-    imageInput.value = "";
-    return;
-  }
-
-  addMessage("user", "[Image uploaded]", null);
-  try {
-    const data = await queryImage(f);
-    addMessage("bot", `${data.answer || ""}`, data.sources || []);
-  } catch (err) {
-    addMessage("bot", `Error: ${err.message}`, []);
-  } finally {
-    imageInput.value = "";
   }
 });
 
