@@ -68,9 +68,15 @@ def similarity_search(
     *,
     query_embedding: list[float],
     k: int = 5,
+    where: Optional[dict[str, Any]] = None,
 ) -> list[RetrievedChunk]:
     col = get_collection()
-    res = col.query(query_embeddings=[query_embedding], n_results=k, include=["documents", "metadatas", "distances"])
+    res = col.query(
+        query_embeddings=[query_embedding],
+        n_results=k,
+        include=["documents", "metadatas", "distances"],
+        where=where,
+    )
     docs = (res.get("documents") or [[]])[0]
     metas = (res.get("metadatas") or [[]])[0]
     dists = (res.get("distances") or [[]])[0]

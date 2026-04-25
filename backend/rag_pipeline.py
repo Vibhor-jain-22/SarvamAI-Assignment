@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Any, Iterable, Optional
@@ -63,6 +64,19 @@ def write_manifest(data: dict[str, Any]) -> None:
     _ensure_storage_dirs()
     with open(_manifest_path(), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def read_manifest() -> Optional[dict[str, Any]]:
+    if not os.path.exists(_manifest_path()):
+        return None
+    try:
+        with open(_manifest_path(), "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if isinstance(data, dict):
+            return data
+    except Exception:
+        logger.exception("Failed to read manifest")
+    return None
 
 
 def has_ingested_manual() -> bool:
@@ -261,6 +275,7 @@ def ingest_pdf(
     chunk_overlap: int = 200,
 ) -> dict[str, Any]:
     _ensure_storage_dirs()
+    doc_id = uuid.uuid4().hex
     pages = extract_pdf_pages(pdf_path)
     num_pages = len(pages)
     chunks = build_chunks_from_pages(pages, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
@@ -278,12 +293,13 @@ def ingest_pdf(
         ids.append(ch.chunk_id)
         docs.append(ch.text)
         embeds.append(emb)
-        metas.append({"page": ch.page, "section": ch.section, "chunk_id": ch.chunk_id})
+        metas.append({"page": ch.page, "section": ch.section, "chunk_id": ch.chunk_id, "doc_id": doc_id})
 
     if ids:
         upsert_chunks(ids=ids, documents=docs, embeddings=embeds, metadatas=metas)
 
     manifest = {
+        "doc_id": doc_id,
         "last_uploaded_filename": original_filename,
         "ingested_at": _utc_now_iso(),
         "chunking": {"chunk_size": chunk_size, "chunk_overlap": chunk_overlap},
@@ -333,12 +349,16 @@ def answer_query(
     if not has_ingested_manual():
         return {"answer": "Please upload a bike manual PDF first.", "sources": []}
 
+    manifest = read_manifest() or {}
+    doc_id = manifest.get("doc_id")
+
     client = get_llm_provider()
     q_emb = client.embed_text(question)
     is_summary = _is_summary_question(question)
     # Summary-style questions often don't match a single chunk strongly; retrieve more.
     retrieve_k = 25 if is_summary else k
-    retrieved = similarity_search(query_embedding=q_emb, k=retrieve_k)
+    where = {"doc_id": doc_id} if isinstance(doc_id, str) and doc_id else None
+    retrieved = similarity_search(query_embedding=q_emb, k=retrieve_k, where=where)
 
     logger.info(
         "Retrieved %s chunks: %s",

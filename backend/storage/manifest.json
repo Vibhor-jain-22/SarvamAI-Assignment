@@ -1,12 +1,13 @@
 {
-  "last_uploaded_filename": "himalayan-d3g-owners-manual_removed.pdf",
-  "ingested_at": "2026-04-24T11:40:36.568525+00:00",
+  "doc_id": "ec064777ccae4942b13741c8026678c8",
+  "last_uploaded_filename": "Vibhor Jain_Resume_Apr9.pdf",
+  "ingested_at": "2026-04-25T13:13:35.475253+00:00",
   "chunking": {
     "chunk_size": 2000,
     "chunk_overlap": 200
   },
   "counts": {
-    "pages": 9,
-    "chunks": 8
+    "pages": 1,
+    "chunks": 3
   }
 }
