@@ -29,6 +29,9 @@ If the answer is not present in the context, say:
 Do NOT make assumptions.
 Do NOT use external knowledge.
 Always be grounded in the provided document.
+
+If the user asks for a derived value (e.g. totals, sums, durations), you MAY do basic arithmetic
+ONLY using numbers/dates explicitly present in the provided context. Show the calculation briefly.
 """
 
 
@@ -331,10 +334,29 @@ _SUMMARY_HINTS = (
     "high level",
 )
 
+_AGGREGATION_HINTS = (
+    "total",
+    "sum",
+    "add up",
+    "overall",
+    "years",
+    "months",
+    "duration",
+    "tenure",
+    "experience",
+    "worked",
+    "how long",
+)
+
 
 def _is_summary_question(q: str) -> bool:
     q = (q or "").strip().lower()
     return any(h in q for h in _SUMMARY_HINTS)
+
+
+def _is_aggregation_question(q: str) -> bool:
+    q = (q or "").strip().lower()
+    return any(h in q for h in _AGGREGATION_HINTS)
 
 
 def answer_query(
@@ -355,8 +377,9 @@ def answer_query(
     client = get_llm_provider()
     q_emb = client.embed_text(question)
     is_summary = _is_summary_question(question)
+    is_agg = _is_aggregation_question(question)
     # Summary-style questions often don't match a single chunk strongly; retrieve more.
-    retrieve_k = 25 if is_summary else k
+    retrieve_k = 25 if (is_summary or is_agg) else k
     where = {"doc_id": doc_id} if isinstance(doc_id, str) and doc_id else None
     retrieved = similarity_search(query_embedding=q_emb, k=retrieve_k, where=where)
 
@@ -388,6 +411,8 @@ def answer_query(
     user_prompt = (
         "Use ONLY the context below to answer the question.\n"
         "If the user asks for a summary/overview, produce a concise, structured summary grounded in the context.\n\n"
+        "If the user asks for a total / duration / years of experience, extract the relevant dates or numbers from the context and do the math.\n"
+        "If required dates/numbers are missing or ambiguous, ask for clarification or respond with the fallback.\n\n"
         f"Question: {question}\n\n"
         f"Context:\n{context}"
     )
