@@ -1,4 +1,5 @@
 // Use same-origin requests so the UI works consistently wherever it's hosted.
+console.log("NEW JS LOADED 🚀");
 const API_BASE = "";
 
 const chatEl = document.getElementById("chat");
