@@ -34,6 +34,19 @@ def get_collection(name: str = "bike_manual_chunks"):
     return client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
 
 
+def reset_collection(name: str = "bike_manual_chunks") -> None:
+    """
+    Drops the persisted collection to ensure a clean index on each upload.
+    This prevents stale chunks from previous documents from affecting retrieval.
+    """
+    client = _get_client()
+    try:
+        client.delete_collection(name=name)
+    except Exception:
+        pass
+    client.get_or_create_collection(name=name, metadata={"hnsw:space": "cosine"})
+
+
 def upsert_chunks(
     *,
     ids: list[str],

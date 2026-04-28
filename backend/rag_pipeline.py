@@ -13,14 +13,14 @@ import pdfplumber
 from pypdf import PdfReader
 
 from .embedding import get_llm_provider
-from .retriever import RetrievedChunk, similarity_search, upsert_chunks
+from .retriever import RetrievedChunk, reset_collection, similarity_search, upsert_chunks
 
 
 logger = logging.getLogger("rag")
 
 FALLBACK_ANSWER = "Sorry, this information is not available in the manual."
 
-SYSTEM_PROMPT = """You are a bike troubleshooting assistant.
+SYSTEM_PROMPT = """You are a document question-answering assistant.
 
 Answer ONLY using the provided context.
 If the answer is not present in the context, say:
@@ -279,6 +279,8 @@ def ingest_pdf(
 ) -> dict[str, Any]:
     _ensure_storage_dirs()
     doc_id = uuid.uuid4().hex
+    # Ensure a clean index per upload so results never mix across documents.
+    reset_collection()
     pages = extract_pdf_pages(pdf_path)
     num_pages = len(pages)
     chunks = build_chunks_from_pages(pages, chunk_size=chunk_size, chunk_overlap=chunk_overlap)
@@ -379,9 +381,13 @@ def answer_query(
     is_summary = _is_summary_question(question)
     is_agg = _is_aggregation_question(question)
     # Summary-style questions often don't match a single chunk strongly; retrieve more.
-    retrieve_k = 25 if (is_summary or is_agg) else k
+    retrieve_k = 25 if (is_summary or is_agg) else max(k, 10)
     where = {"doc_id": doc_id} if isinstance(doc_id, str) and doc_id else None
     retrieved = similarity_search(query_embedding=q_emb, k=retrieve_k, where=where)
+    # Backward-compat / safety net: if doc_id filtering yields nothing (e.g. old indexes),
+    # retry without a where-clause.
+    if where is not None and not retrieved:
+        retrieved = similarity_search(query_embedding=q_emb, k=retrieve_k, where=None)
 
     logger.info(
         "Retrieved %s chunks: %s",
@@ -396,6 +402,11 @@ def answer_query(
         filtered = [r for r in retrieved if r.text.strip()]
     else:
         filtered = [r for r in retrieved if r.distance <= distance_threshold and r.text.strip()]
+        # If thresholding filtered everything out, fall back to the top chunks anyway.
+        # This improves recall for questions like "bike name" or "submerged in water"
+        # where the embedding match can be weaker, but the answer exists in the doc.
+        if not filtered:
+            filtered = [r for r in retrieved if r.text.strip()]
     if not filtered:
         log_evaluation_event(
             {

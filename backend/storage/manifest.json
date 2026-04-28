@@ -1,13 +1,13 @@
 {
-  "doc_id": "cc4ea896c9c8469ca79b595671360d75",
-  "last_uploaded_filename": "Vibhor Jain_Resume_Apr9.pdf",
-  "ingested_at": "2026-04-25T13:27:04.978680+00:00",
+  "doc_id": "a096813ce27346178c2b82d1d395b8dd",
+  "last_uploaded_filename": "dominar-400-owners-manual_removed_compressed-2.pdf",
+  "ingested_at": "2026-04-28T13:22:00.815878+00:00",
   "chunking": {
     "chunk_size": 2000,
     "chunk_overlap": 200
   },
   "counts": {
-    "pages": 1,
-    "chunks": 3
+    "pages": 9,
+    "chunks": 10
   }
 }
