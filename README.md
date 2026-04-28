@@ -1,180 +1,97 @@
-# 🚀 Bike Troubleshooting Assistant (RAG-Based)
+# Bike Troubleshooting Assistant (RAG)
 
-## 🧠 Overview
+A FastAPI + vanilla JS web app that answers questions **strictly** from an uploaded manual PDF using Retrieval Augmented Generation (RAG). If the manual doesn’t contain the answer, it refuses with:
 
-This project implements a **Retrieval-Augmented Generation (RAG) based AI assistant** that answers user queries **strictly from a provided bike manual (PDF)**.
+`Sorry, this information is not available in the manual.`
 
-The system is designed with a **zero-hallucination principle**:
+## Setup
 
-> If the answer is not present in the manual, the assistant refuses to respond.
+### 1) Create venv + install dependencies
 
----
+From the repo root:
 
-## 🎯 Key Capabilities
-
-* 📄 PDF ingestion and processing
-* 🔍 Semantic search using embeddings (ChromaDB)
-* 🤖 LLM-powered answer generation (Mistral)
-* 🛑 Strict grounding (no hallucinations)
-* 📌 Source attribution with page numbers
-
----
-
-### 🔄 End-to-End Flow
-
-1. **PDF Upload**
-
-   * User uploads a bike manual
-   * Text is extracted and chunked
-
-2. **Embedding Pipeline**
-
-   * Text chunks are converted into embeddings
-   * Stored in **ChromaDB (persistent storage)**
-
-3. **Query Processing**
-
-   * User submits a question via UI
-
-4. **Retrieval**
-
-   * Relevant chunks retrieved using similarity search
-
-5. **LLM Response Generation**
-
-   * Mistral LLM generates answer strictly from retrieved context
-   * If context is insufficient → refusal response
-
----
-
-## 🧰 Tech Stack
-
-### 🔹 Backend
-
-* Python + FastAPI
-* Uvicorn
-
-### 🔹 LLM
-
-* Mistral API (`mistral-small-latest`)
-
-### 🔹 Embeddings & Retrieval
-
-* Mistral Embeddings (`mistral-embed`)
-* ChromaDB (persistent vector store)
-
-### 🔹 Frontend
-
-* Vanilla JavaScript + HTML
-
----
-
-## 📁 Project Structure
-
-SarvamAI-Assignment/
-│
-├── backend/
-│   ├── main.py              # FastAPI app
-│   ├── storage/             # Chroma DB + logs
-│   └── requirements.txt
-│
-├── frontend/
-│   └── index.html           # UI
-│
-├── embedding.py             # Embedding logic
-└── README.md
-```
-
----
-
-⚙️ Setup Instructions
-
-1️⃣ Create virtual environment
-
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-
----
-
-2️⃣ Install dependencies
-
 pip install -r backend/requirements.txt
 ```
 
----
+### 2) Set environment variables
 
-### 3️⃣ Set environment variables
-
+```bash
 export MISTRAL_API_KEY="YOUR_KEY"
+
+# Optional:
 export MISTRAL_CHAT_MODEL="mistral-small-latest"
 export MISTRAL_EMBED_MODEL="mistral-embed"
+
+# If you prefer OpenAI instead:
+# export OPENAI_API_KEY="YOUR_KEY"
+# export OPENAI_CHAT_MODEL="gpt-4.1-mini"
+# export OPENAI_EMBED_MODEL="text-embedding-3-small"
+# export OPENAI_VISION_MODEL="gpt-4o-mini"
+
+# If you prefer Gemini instead:
+# export GEMINI_API_KEY="YOUR_KEY"
+# export GEMINI_CHAT_MODEL="gemini-2.0-flash"
+# export GEMINI_EMBED_MODEL="gemini-embedding-001"
+# export GEMINI_VISION_MODEL="gemini-2.0-flash"
+
+export LOG_LEVEL="INFO"
 ```
 
----
+### 3) Run the backend
 
-4️⃣ Run backend
-
+```bash
 uvicorn backend.main:app --reload --port 8000
 ```
 
----
+### 4) Open the frontend
 
-### 5️⃣ Open frontend
+- Open the UI at `http://127.0.0.1:8000/` (or `/ui`).
+- Don’t open `frontend/index.html` directly from disk; the UI is intended to be served by the backend so assets and API calls stay consistent.
 
-Open: http://127.0.0.1:8000/ui
+## Usage
 
----
+1) Click **Upload manual PDF** and upload a bike manual.
+2) Ask questions in chat; the response includes **sources with page numbers**.
 
-## 🧪 API Endpoints
+## API
 
-### 📄 Upload Manual
+- `POST /upload` (multipart): field `pdf` (PDF file)
+- `POST /query`:
+  - JSON: `{ "question": "..." }`
+  - or multipart: field `question` (string)
 
-POST /upload
+### curl examples
+
+Upload a PDF:
+
+```bash
+curl -sS -X POST "http://127.0.0.1:8000/upload" \
+  -F "pdf=@RAG/bullet-350.pdf"
 ```
 
-### ❓ Query
+Ask a question (JSON):
 
-POST /query
+```bash
+curl -sS -X POST "http://127.0.0.1:8000/query" \
+  -H "Content-Type: application/json" \
+  -d '{"question":"How do I adjust the clutch lever free play?"}'
 ```
 
----
+## Where data is stored
 
-## 🧪 Sample Queries
+- Chroma persistence: `backend/storage/chroma/`
+- Manifest: `backend/storage/manifest.json`
+- Evaluation logs (JSONL): `backend/storage/eval_logs.jsonl`
 
-* “What is the recommended engine oil grade?”
-* “How do I adjust the clutch lever free play?”
-* “What does the ABS warning light indicate?”
+## Sample test queries
 
-### ❌ Out-of-scope example
+After uploading a manual, try:
 
-> “What is the capital of France?”
-> → Returns:
-> `Sorry, this information is not available in the manual.`
+- “What is the recommended engine oil grade?”
+- “How do I adjust the clutch lever free play?”
+- “What does the ABS warning light indicate?”
+- Out-of-manual check: “What is the capital of France?” (must refuse)
 
----
-
-## 🧠 Design Decisions
-
-### 🔒 Grounded Answering
-
-* Responses are strictly based on retrieved context
-* Prevents hallucinations
-
-### 📦 Persistent Vector Store
-
-* ChromaDB stores embeddings for fast retrieval
-
-### ⚙️ Simple, Modular Backend
-
-* Clear separation between ingestion, retrieval, and generation
-
----
-
-## 💼 Business Impact
-
-* Reduces time spent reading manuals
-* Enables instant troubleshooting
-* Improves accessibility of technical information
-
----
